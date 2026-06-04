@@ -1,0 +1,103 @@
+[project]
+name = "pokemon-harness-backend"
+version = "0.1.0"
+description = "Headless PyBoy FastAPI backend for a pure-human Pokemon CLI harness."
+readme = "../README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "anyio>=4.9.0",
+    "fastapi>=0.124.0",
+    "orjson>=3.11.0",
+    "pillow>=12.0.0",
+    "pydantic>=2.12.0",
+    "pydantic-settings>=2.12.0",
+    "pyboy>=2.7.0",
+    "uvicorn[standard]>=0.38.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pokemon_harness"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.34.0",
+    "httpx>=0.28.0",
+    "httpx2>=0.1.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.0",
+]
+
+[tool.basedpyright]
+typeCheckingMode = "all"
+pythonVersion = "3.13"
+pythonPlatform = "All"
+include = ["src", "tests"]
+exclude = ["**/__pycache__", "**/.venv", "**/build", "**/dist"]
+reportUnusedCallResult = "warning"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUnusedVariable = "error"
+reportUnnecessaryComparison = "none"
+reportMissingParameterType = "error"
+reportPrivateUsage = "error"
+reportUnusedFunction = "none"
+reportMissingTypeStubs = "none"
+reportUnknownMemberType = "none"
+reportUnknownArgumentType = "none"
+reportAny = "none"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",
+    "CPY001",
+    "D203",
+    "D213",
+    "D",
+    "FBT001",
+    "FBT002",
+    "FIX002",
+    "ISC001",
+    "TD002",
+    "TD003",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG",
+    "D",
+    "PLR2004",
+    "S101",
+    "SLF001",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Body",
+    "fastapi.Depends",
+    "fastapi.Query",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--strict-config",
+    "--strict-markers",
+]
+filterwarnings = ["error"]

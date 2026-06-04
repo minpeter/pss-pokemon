@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - uses: oven-sh/setup-bun@v3
+      - name: Backend checks
+        working-directory: backend
+        run: |
+          uv run ruff check .
+          uv run basedpyright
+          uv run pytest
+      - name: CLI checks
+        working-directory: cli
+        run: |
+          bun install --frozen-lockfile
+          bunx biome check .
+          bunx tsc --noEmit
+          bun test
+      - name: Real ROM preflight
+        working-directory: backend
+        env:
+          POKEMON_ROM_PATH: ${{ secrets.POKEMON_ROM_PATH }}
+          POKEMON_SAVE_STATE_PATH: ${{ secrets.POKEMON_SAVE_STATE_PATH }}
+        run: |
+          if [ -z "${POKEMON_ROM_PATH:-}" ] || [ -z "${POKEMON_SAVE_STATE_PATH:-}" ]; then
+            echo "SKIPPED: missing ROM secret"
+            exit 0
+          fi
+          uv run python -m pokemon_harness.preflight
