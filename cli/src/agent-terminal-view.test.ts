@@ -24,8 +24,9 @@ describe("AgentTerminalView", () => {
     view.stopSpinner()
 
     const output = chunks.join("")
-    expect(output).toContain("\n\r✦ agent thinking.")
-    expect(output).not.toContain("- agent thinking")
+    const visibleOutput = stripAnsi(output)
+    expect(visibleOutput).toContain("\n\r✦ agent thinking.")
+    expect(visibleOutput).not.toContain("- agent thinking")
   })
 
   test("cycles diamond thinking dots from one to three and clears the widest label", () => {
@@ -45,9 +46,10 @@ describe("AgentTerminalView", () => {
     view.stopSpinner()
 
     const output = chunks.join("")
-    expect(output).toContain("✦ agent thinking.")
-    expect(output).toContain("✧ agent thinking..")
-    expect(output).toContain("◆ agent thinking...")
+    const visibleOutput = stripAnsi(output)
+    expect(visibleOutput).toContain("✦ agent thinking.")
+    expect(visibleOutput).toContain("✧ agent thinking..")
+    expect(visibleOutput).toContain("◆ agent thinking...")
     expect(output).toContain(`\r${" ".repeat("◆ agent thinking...".length)}\r`)
   })
 
@@ -77,15 +79,16 @@ describe("AgentTerminalView", () => {
     view.stopSpinner()
 
     const output = chunks.join("")
-    expect(output).toContain("loading agent")
-    expect(output).toContain("\n\r✦ agent thinking.")
-    expect(output).not.toContain("- agent thinking")
-    expect(output).toContain("TURN")
-    expect(output).toContain("3")
-    expect(output).toContain("Fresh Pokemon harness observation before turn 3.")
-    expect(output).toContain("[agent image]")
-    expect(output).toContain("Pallet Town")
-    expect(output).toContain("ACTION use_emulator")
+    const visibleOutput = stripAnsi(output)
+    expect(visibleOutput).toContain("loading agent")
+    expect(visibleOutput).toContain("\n\r✦ agent thinking.")
+    expect(visibleOutput).not.toContain("- agent thinking")
+    expect(visibleOutput).toContain("TURN")
+    expect(visibleOutput).toContain("3")
+    expect(visibleOutput).toContain("Fresh Pokemon harness observation before turn 3.")
+    expect(visibleOutput).toContain("[agent image]")
+    expect(visibleOutput).toContain("Pallet Town")
+    expect(visibleOutput).toContain("ACTION use_emulator")
   })
 
   test("renders compact action status without another image after an action", async () => {
@@ -211,4 +214,9 @@ async function firstClearRowCount({
 
   const clearChunk = chunks.find((chunk) => chunk.startsWith("\u001B["))
   return Number.parseInt(clearChunk?.slice(2) ?? "", 10)
+}
+
+function stripAnsi(value: string): string {
+  const ansiSequence = new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, "g")
+  return value.replace(ansiSequence, "")
 }

@@ -264,15 +264,23 @@ describe("renderObservation", () => {
     const rendered = await renderObservation(curatedAgentObservation, {
       render: () => Promise.resolve("[image]"),
     })
+    const visibleRendered = stripAnsi(rendered)
 
-    expect(rendered).toContain("MODEL TEXT")
-    expect(rendered).toContain("Observation summary:")
-    expect(rendered).toContain("LOC Pallet Town tile 5,6 facing up exits up/left")
-    expect(rendered).toContain("HELP passable up/left")
-    expect(rendered.match(/LOC Pallet Town/g)?.length).toBe(1)
-    expect(rendered).toContain("MODEL IMAGE screenshot + grid overlay PNG 1x1 + 10x9 image/png")
+    expect(visibleRendered).toContain("MODEL TEXT")
+    expect(visibleRendered).toContain("Observation summary:")
+    expect(visibleRendered).toContain("LOC Pallet Town tile 5,6 facing up exits up/left")
+    expect(visibleRendered).toContain("HELP passable up/left")
+    expect(visibleRendered.match(/LOC Pallet Town/g)?.length).toBe(1)
+    expect(visibleRendered).toContain(
+      "MODEL IMAGE screenshot + grid overlay PNG 1x1 + 10x9 image/png",
+    )
   })
 })
+
+function stripAnsi(value: string): string {
+  const ansiSequence = new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, "g")
+  return value.replace(ansiSequence, "")
+}
 
 async function withStdoutRows<T>(rows: number | undefined, callback: () => Promise<T>): Promise<T> {
   const previousRows = process.stdout.rows
