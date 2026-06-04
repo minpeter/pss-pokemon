@@ -40,6 +40,19 @@ describe("file Pokemon agent memory", () => {
     }
     expect(escapedWriteExists).toBe(false)
   })
+
+  test("persists semantic progress facts across reloads", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "pokemon-memory-progress-"))
+    const memory = await createFilePokemonAgentMemory({ rootDir, sessionId: "progress" })
+
+    await memory.recordAction(createProgressExecution(), 1)
+
+    const reloaded = await createFilePokemonAgentMemory({ rootDir, sessionId: "progress" })
+    const context = reloaded.renderContext(observationFixture)
+
+    expect(context).toContain("PROGRESS_FACT flag hasOaksParcel=true")
+    expect(context).toContain("PROGRESS_FACT item Oak's Parcel x1")
+  })
 })
 
 function createExecution(): PokemonActionExecution {
@@ -73,6 +86,29 @@ function createExecution(): PokemonActionExecution {
       playerTileBefore: "x=5, y=6",
       stateChanged: true,
       summary: "frame advanced; position unchanged; dialog unchanged; battle unchanged",
+    },
+  }
+}
+
+function createProgressExecution(): PokemonActionExecution {
+  const state = {
+    ...observationFixture.state,
+    bag: [{ name: "Oak's Parcel", quantity: 1 }],
+    flags: { values: { hasOaksParcel: true } },
+  }
+  return {
+    ...createExecution(),
+    response: {
+      ...createExecution().response,
+      observation: {
+        ...createExecution().response.observation,
+        state,
+      },
+    },
+    verification: {
+      ...createExecution().verification,
+      moved: true,
+      summary: "frame advanced; got parcel",
     },
   }
 }

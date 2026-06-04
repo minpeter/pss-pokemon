@@ -51,7 +51,9 @@ describe("agent runtime input", () => {
           tile: { x: 5, y: 6 },
         },
       ],
+      progressFacts: [],
       recentActions: [],
+      untrustedDialogFacts: [],
     })
     const llm: RuntimeLlm = async ({ history }) => {
       historyPayloads.push(JSON.stringify(history))
@@ -72,7 +74,9 @@ describe("agent runtime input", () => {
     })
 
     expect(historyPayloads.join("\n")).toContain("Memory context:")
-    expect(historyPayloads.join("\n")).toContain("STUCK_WARNING Repeated failed up movement")
+    expect(historyPayloads.join("\n")).toContain(
+      "CONFLICTING_MEMORY up at x=5, y=6 is now passable",
+    )
   })
 
   test("loads default file memory for the active agent session", async () => {
@@ -94,7 +98,9 @@ describe("agent runtime input", () => {
             tile: { x: 5, y: 6 },
           },
         ],
+        progressFacts: [],
         recentActions: [],
+        untrustedDialogFacts: [],
       }),
       "utf8",
     )
@@ -116,6 +122,8 @@ describe("agent runtime input", () => {
       sessionId: "file-memory-test",
     })
 
-    expect(historyPayloads.join("\n")).toContain("STUCK_WARNING Repeated failed up movement")
+    expect(historyPayloads.join("\n")).toContain(
+      "CONFLICTING_MEMORY up at x=5, y=6 is now passable",
+    )
   })
 })

@@ -19,17 +19,37 @@ export interface MovementAttemptMemory {
   readonly tile: TilePosition
 }
 
+export interface ProgressFactMemory {
+  readonly fact: string
+  readonly frame: number
+  readonly turn: number
+}
+
 export interface RecentActionMemory {
   readonly action: string
   readonly frame: number
   readonly turn: number
 }
 
+export interface UntrustedDialogMemory {
+  readonly frame: number
+  readonly text: string
+  readonly turn: number
+}
+
 export interface PokemonMemoryProjection {
   readonly invalidatedAssumptions: readonly string[]
   readonly movementAttempts: readonly MovementAttemptMemory[]
+  readonly progressFacts: readonly ProgressFactMemory[]
   readonly recentActions: readonly RecentActionMemory[]
+  readonly untrustedDialogFacts: readonly UntrustedDialogMemory[]
 }
+
+export type PokemonMemoryProjectionInput = Omit<
+  PokemonMemoryProjection,
+  "progressFacts" | "untrustedDialogFacts"
+> &
+  Partial<Pick<PokemonMemoryProjection, "progressFacts" | "untrustedDialogFacts">>
 
 export interface PokemonAgentMemory {
   readonly projection: PokemonMemoryProjection
@@ -64,10 +84,30 @@ export const PokemonMemoryProjectionSchema: z.ZodType<PokemonMemoryProjection> =
       turn: z.number().int().min(1),
     }),
   ),
+  progressFacts: z
+    .array(
+      z.object({
+        fact: z.string().min(1),
+        frame: z.number().int().min(0),
+        turn: z.number().int().min(1),
+      }),
+    )
+    .default([]),
+  untrustedDialogFacts: z
+    .array(
+      z.object({
+        frame: z.number().int().min(0),
+        text: z.string().min(1),
+        turn: z.number().int().min(1),
+      }),
+    )
+    .default([]),
 })
 
 export const EMPTY_MEMORY_PROJECTION: PokemonMemoryProjection = {
   invalidatedAssumptions: [],
   movementAttempts: [],
+  progressFacts: [],
   recentActions: [],
+  untrustedDialogFacts: [],
 }
