@@ -56,8 +56,9 @@ before they reach runtime code.
   `POKEMON_AGENT_SESSION_ID`, plus `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`
   fallbacks. Defaults include AI base `https://codex.nekos.me/v1`, model
   `gpt-5.5`, and session `pokemon-agent`.
-- Agent tools are action-only: `pokemon_press`, `pokemon_walk`, `pokemon_hold`,
-  `pokemon_wait`, and `pokemon_text_skip`.
+- Agent tool control is action-only through `use_emulator({ buttons })`.
+  Valid buttons are `a`, `b`, `up`, `down`, `left`, `right`, `start`,
+  `select`, and `wait`; `wait` advances two seconds of emulator frames.
 - Do not expose reset, load, save, ROM loading, or save-state controls to the
   agent plane.
 - Agent runtime should keep looping until interrupted. `maxTurns` is for tests
