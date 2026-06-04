@@ -40,6 +40,7 @@ type UseEmulatorInput = z.infer<typeof UseEmulatorInputSchema>
 type ActionStep = ActionRequest["sequence"][number]
 
 export type ActionObservationHandler = (observation: AgentObservation) => void | Promise<void>
+export type ActionExecutionHandler = (execution: PokemonActionExecution) => void | Promise<void>
 
 export interface ActionToolOutput {
   readonly buttons: readonly EmulatorButton[]
@@ -56,6 +57,7 @@ export interface CreatePokemonControlPlaneOptions {
   readonly backendUrl?: string
   readonly client?: PokemonApiClient
   readonly controllerId?: string
+  readonly onActionExecution?: ActionExecutionHandler
   readonly onActionObservation?: ActionObservationHandler
   readonly transport?: JsonTransport
 }
@@ -64,13 +66,19 @@ export function createPokemonControlPlane({
   backendUrl = DEFAULT_BACKEND_URL,
   client,
   controllerId = AGENT_CONTROLLER_ID,
+  onActionExecution,
   onActionObservation,
   transport,
 }: CreatePokemonControlPlaneOptions = {}) {
   const resolvedClient =
     client ?? new PokemonApiClient(transport ?? new KyJsonTransport(backendUrl))
   const sendAction = (action: ActionRequest) =>
-    sendVerifiedAction({ action, client: resolvedClient, onActionObservation })
+    sendVerifiedAction({
+      action,
+      client: resolvedClient,
+      onActionExecution,
+      onActionObservation,
+    })
 
   return {
     use_emulator: tool({
@@ -144,13 +152,18 @@ function baseActionToolOutput(
 async function sendVerifiedAction({
   action,
   client,
+  onActionExecution,
   onActionObservation,
 }: {
   readonly action: ActionRequest
   readonly client: PokemonApiClient
+  readonly onActionExecution: ActionExecutionHandler | undefined
   readonly onActionObservation: ActionObservationHandler | undefined
 }): Promise<PokemonActionExecution> {
   const execution = await executePokemonAction({ action, client })
+  if (onActionExecution !== undefined) {
+    await onActionExecution(execution)
+  }
   if (onActionObservation !== undefined) {
     await onActionObservation(execution.observation)
   }

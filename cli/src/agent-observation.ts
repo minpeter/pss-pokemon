@@ -7,11 +7,13 @@ import type { Observation, Screenshot } from "./schemas"
 export type ObservedAgentInput = readonly UserMessageContentPart[]
 
 export interface AgentObservationInputOptions {
+  readonly memoryContext?: string
   readonly observation: AgentObservation
   readonly text: string
 }
 
 export interface AgentObservationTextOptions {
+  readonly memoryContext?: string
   readonly observation: Observation
   readonly text: string
 }
@@ -36,12 +38,17 @@ export async function captureAgentObservation(client: PokemonApiClient): Promise
 }
 
 export function createObservedAgentInput({
+  memoryContext,
   observation,
   text,
 }: AgentObservationInputOptions): ObservedAgentInput {
   return [
     {
-      text: createObservedText({ observation, text }),
+      text: createObservedText({
+        ...(memoryContext === undefined ? {} : { memoryContext }),
+        observation,
+        text,
+      }),
       type: "text",
     },
     {
@@ -57,11 +64,20 @@ export function createObservedAgentInput({
   ] satisfies ObservedAgentInput
 }
 
-function createObservedText({ observation, text }: AgentObservationInputOptions): string {
-  return formatObservedAgentText({ observation, text })
+function createObservedText({
+  memoryContext,
+  observation,
+  text,
+}: AgentObservationInputOptions): string {
+  return formatObservedAgentText({
+    ...(memoryContext === undefined ? {} : { memoryContext }),
+    observation,
+    text,
+  })
 }
 
 export function formatObservedAgentText({
+  memoryContext,
   observation,
   text,
 }: AgentObservationTextOptions): string {
@@ -70,6 +86,7 @@ export function formatObservedAgentText({
     "",
     "Observation summary:",
     ...formatObservationSummaryLines(observation),
+    ...(memoryContext === undefined ? [] : ["", memoryContext]),
     "",
     "Image 1: current game screenshot.",
     "Image 2: grid/collision overlay screenshot.",

@@ -15,17 +15,18 @@ before they reach runtime code.
 | Task | Location | Notes |
 | --- | --- | --- |
 | Human CLI | `src/main.ts`, `src/human-control-plane.ts` | Keyboard actor, menu, shared observation/action path. |
-| Human keymap | `src/keymap.ts` | Injectable controller ID and mapped keys. |
-| Agent CLI | `src/agent-main.ts` | Env, terminal view, and top-level error handling. |
-| Agent env | `src/agent-env.ts` | Loads root `.env`, `backend/.env`, then `cli/.env`; later files win. |
-| Agent runtime | `src/agent-runtime.ts` | PSS runtime loop, observation injection, dashboard forwarding. |
+| Human keymap/env | `src/keymap.ts`, `src/human-env.ts` | `manual-cli` and backend URL defaults. |
+| Agent CLI | `src/agent-main.ts` | Env, terminal view, file-backed memory, top-level errors. |
+| Agent env | `src/agent-env.ts`, `src/env-files.ts` | Loads root `.env`, `backend/.env`, then `cli/.env`; later files win. |
+| Agent runtime | `src/agent-runtime.ts` | Thin adapter around `runPokemonControlLoop()` and `createPssRuntimeActor()`. |
+| PSS actor | `src/pss-runtime-actor.ts` | Instructions, provider/session, fresh observation hook, dashboard forwarding. |
 | Agent tools | `src/agent-tools.ts` | Action-only AI tools and verification summaries. |
-| Control loop | `src/pokemon-control-loop.ts` | Shared controller heartbeat/release, observation, actor turn, and post-action observation loop. |
-| Action executor | `src/pokemon-action-executor.ts` | Shared backend action execution and post-action observation. |
-| API client | `src/api-client.ts` | Zod-parsed backend wrapper. |
-| Transport | `src/transport.ts` | Ky HTTP transport and parsed backend error details. |
+| Agent memory | `src/agent-memory*.ts` | Recent actions, stuck movement warnings, projection schema, file store. |
+| Control loop | `src/pokemon-control-loop.ts` | Controller heartbeat/release, observation, actor turn, post-action observation. |
+| Action executor | `src/pokemon-action-executor.ts` | Shared backend action execution and verification summary. |
+| API client | `src/api-client.ts`, `src/transport.ts` | Zod-parsed backend wrapper and HTTP error normalization. |
 | API schema mirror | `src/schemas.ts` | Keep synchronized with backend Pydantic JSON aliases. |
-| Renderer | `src/renderer.ts`, `terminal-image-renderer.ts` | Terminal frame, image fallback, scrollback behavior. |
+| Renderer/view | `src/renderer.ts`, `terminal-image-renderer.ts`, `agent-terminal-view.ts` | Terminal frame, image fallback, spinner/status handling. |
 | Fixtures | `src/agent-test-fixtures.ts` | Reusable observation and recording transport fixtures. |
 
 ## CONVENTIONS
@@ -48,14 +49,14 @@ before they reach runtime code.
   Enter Start, Backspace Select, `m` menu, `q` quit.
 - Human controller ID is `manual-cli`; agent controller ID defaults to
   `agent-cli`, except `POKEMON_AI_MODEL=human` defaults to `manual-cli`.
-  Switching surfaces on one backend can hit controller conflict only while the
-  previous controller lease is still live.
 - `POKEMON_BACKEND_URL` defaults to `http://127.0.0.1:8765`.
 - Agent env supports `POKEMON_AI_BASE_URL`, `POKEMON_AI_API_KEY`,
   `POKEMON_AI_MODEL`, `POKEMON_AGENT_CONTROLLER_ID`,
   `POKEMON_AGENT_SESSION_ID`, plus `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`
   fallbacks. Defaults include AI base `https://codex.nekos.me/v1`, model
   `gpt-5.5`, and session `pokemon-agent`.
+- Agent memory persists under `.local/agent-memory/<sanitized-session-id>/` as
+  `projection.json` plus `episodes.jsonl`; do not commit it.
 - Agent tool control is action-only through `use_emulator({ buttons })`.
   Valid buttons are `a`, `b`, `up`, `down`, `left`, `right`, `start`,
   `select`, and `wait`; `wait` advances two seconds of emulator frames.
@@ -63,20 +64,8 @@ before they reach runtime code.
   agent plane.
 - Agent runtime should keep looping until interrupted. `maxTurns` is for tests
   and injected callers, not a CLI completion condition.
-- Agent observation input is multipart: compact state text, current screenshot,
-  and grid/collision overlay screenshot.
-
-## COMMANDS
-
-```bash
-bun install --frozen-lockfile
-bunx biome check .
-bunx tsc --noEmit
-bun test
-POKEMON_BACKEND_URL=http://127.0.0.1:8765 bun run human
-POKEMON_BACKEND_URL=http://127.0.0.1:8765 bun run agent
-POKEMON_AI_MODEL=human POKEMON_BACKEND_URL=http://127.0.0.1:8765 bun run agent
-```
+- Each PSS turn must steer fresh observation text plus current screenshot and
+  grid/collision screenshot before sending the turn prompt.
 
 ## GOTCHAS
 
@@ -85,6 +74,6 @@ POKEMON_AI_MODEL=human POKEMON_BACKEND_URL=http://127.0.0.1:8765 bun run agent
 - `runPokemonControlLoop()` claims `/control/heartbeat`, refreshes it while the
   CLI is alive, and posts `/control/release` on graceful exit.
 - `gridScreenshot()` fetches PNG bytes from `/screenshot/grid?scale=4` and wraps
-  them as base64 because the model/input renderer expects screenshot-shaped data.
-- Terminal image code has native graphics, ANSI fallback, row reservation, and
-  current-screenshot-plus-grid model image behavior covered by tests.
+  them as base64 because model input expects screenshot-shaped data.
+- Memory context is advisory: repeated failed moves can emit `STUCK_WARNING`,
+  but live observation and action verification remain the source of truth.

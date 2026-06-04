@@ -59,6 +59,7 @@ describe("agent runtime wiring", () => {
     expect(instructions).toContain("short sequence of 'a' and 'wait'")
     expect(instructions).toContain("If battle is active")
     expect(instructions).toContain("<action_plan>")
+    expect(instructions).toContain("Memory context is secondary to the fresh live state")
   })
 
   test("streams pss-runtime 0.0.10 events through run.events", async () => {

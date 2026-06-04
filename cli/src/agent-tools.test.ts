@@ -97,4 +97,26 @@ describe("createPokemonControlPlane", () => {
       }),
     ])
   })
+
+  test("reports full action execution for memory reducers", async () => {
+    const sentPayloads: unknown[] = []
+    const executionSummaries: string[] = []
+    const tools = createPokemonControlPlane({
+      controllerId: "agent-test",
+      onActionExecution: (execution) => {
+        executionSummaries.push(execution.verification.summary)
+      },
+      transport: createRecordingTransport(sentPayloads),
+    })
+    const execute = tools.use_emulator.execute
+    if (execute === undefined) {
+      throw new Error("use_emulator execute missing")
+    }
+
+    await execute({ buttons: ["up"] }, { context: {}, messages: [], toolCallId: "tool-call-5" })
+
+    expect(executionSummaries).toEqual([
+      "frame advanced; position unchanged; dialog unchanged; battle unchanged",
+    ])
+  })
 })

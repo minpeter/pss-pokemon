@@ -21,6 +21,7 @@ export async function main(): Promise<void> {
       aiBaseUrl: env.aiBaseUrl,
       backendUrl: env.backendUrl,
       controllerId: env.controllerId,
+      memoryRootDir: ".local/agent-memory",
       modelId: env.modelId,
       onEvent: (event) => {
         view.handleEvent(event)

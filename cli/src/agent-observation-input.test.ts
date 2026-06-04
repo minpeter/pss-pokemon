@@ -5,6 +5,7 @@ import { observationFixture } from "./agent-test-fixtures"
 describe("agent observation input", () => {
   test("creates pss-runtime multipart input with compact state, screenshot, and grid image", () => {
     const input = createObservedAgentInput({
+      memoryContext: "Memory context:\nSTUCK_WARNING Try a different route.",
       observation: observationFixture,
       text: "Fresh observation before turn 1.",
     })
@@ -48,6 +49,11 @@ describe("agent observation input", () => {
     expect(input[0]).toEqual(
       expect.objectContaining({
         text: expect.stringContaining("Image 2: grid/collision overlay screenshot."),
+      }),
+    )
+    expect(input[0]).toEqual(
+      expect.objectContaining({
+        text: expect.stringContaining("STUCK_WARNING Try a different route."),
       }),
     )
   })
