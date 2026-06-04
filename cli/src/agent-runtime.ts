@@ -11,11 +11,8 @@ import { createPokemonControlPlane } from "./agent-tools"
 import type { PokemonApiClient } from "./api-client"
 import { AgentRunError, ControllerConflictError } from "./control-errors"
 import { type PokemonControlLoopStatus, runPokemonControlLoop } from "./pokemon-control-loop"
-import {
-  buildAgentInstructions,
-  createPssRuntimeActor,
-  streamAgentEvents,
-} from "./pss-runtime-actor"
+import { buildAgentInstructions, createProviderAgentSettings } from "./pss-agent-settings"
+import { createPssRuntimeActor, streamAgentEvents } from "./pss-runtime-actor"
 
 const DEFAULT_CONTROLLER_ID = "agent-cli"
 const DEFAULT_SESSION_ID = "pokemon-agent"
@@ -139,5 +136,6 @@ export {
   ControllerConflictError,
   createDashboardEventForwarder,
   createPokemonControlPlane,
+  createProviderAgentSettings,
   streamAgentEvents,
 }

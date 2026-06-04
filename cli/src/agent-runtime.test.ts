@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   buildAgentInstructions,
   createDashboardEventForwarder,
+  createProviderAgentSettings,
   runAgentControlPlane,
   streamAgentEvents,
 } from "./agent-runtime"
@@ -60,6 +61,17 @@ describe("agent runtime wiring", () => {
     expect(instructions).toContain("If battle is active")
     expect(instructions).toContain("<action_plan>")
     expect(instructions).toContain("Memory context is secondary to the fresh live state")
+  })
+
+  test("configures provider-backed agent runs to require the action tool", () => {
+    const settings = createProviderAgentSettings({
+      aiBaseUrl: "https://example.test/v1",
+      modelId: "test-model",
+    })
+
+    expect(settings.toolChoice).toBe("required")
+    expect(settings.instructions).toContain("exactly one action tool")
+    expect(settings.model).toBeDefined()
   })
 
   test("streams pss-runtime 0.0.10 events through run.events", async () => {

@@ -41,6 +41,7 @@ type ActionStep = ActionRequest["sequence"][number]
 
 export type ActionObservationHandler = (observation: AgentObservation) => void | Promise<void>
 export type ActionExecutionHandler = (execution: PokemonActionExecution) => void | Promise<void>
+export type BeforeActionHandler = (action: ActionRequest) => void | Promise<void>
 
 export interface ActionToolOutput {
   readonly buttons: readonly EmulatorButton[]
@@ -57,6 +58,7 @@ export interface CreatePokemonControlPlaneOptions {
   readonly backendUrl?: string
   readonly client?: PokemonApiClient
   readonly controllerId?: string
+  readonly onBeforeAction?: BeforeActionHandler
   readonly onActionExecution?: ActionExecutionHandler
   readonly onActionObservation?: ActionObservationHandler
   readonly transport?: JsonTransport
@@ -66,6 +68,7 @@ export function createPokemonControlPlane({
   backendUrl = DEFAULT_BACKEND_URL,
   client,
   controllerId = AGENT_CONTROLLER_ID,
+  onBeforeAction,
   onActionExecution,
   onActionObservation,
   transport,
@@ -76,6 +79,7 @@ export function createPokemonControlPlane({
     sendVerifiedAction({
       action,
       client: resolvedClient,
+      onBeforeAction,
       onActionExecution,
       onActionObservation,
     })
@@ -154,12 +158,17 @@ async function sendVerifiedAction({
   client,
   onActionExecution,
   onActionObservation,
+  onBeforeAction,
 }: {
   readonly action: ActionRequest
   readonly client: PokemonApiClient
+  readonly onBeforeAction: BeforeActionHandler | undefined
   readonly onActionExecution: ActionExecutionHandler | undefined
   readonly onActionObservation: ActionObservationHandler | undefined
 }): Promise<PokemonActionExecution> {
+  if (onBeforeAction !== undefined) {
+    await onBeforeAction(action)
+  }
   const execution = await executePokemonAction({ action, client })
   if (onActionExecution !== undefined) {
     await onActionExecution(execution)

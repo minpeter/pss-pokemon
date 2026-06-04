@@ -119,4 +119,35 @@ describe("createPokemonControlPlane", () => {
       "frame advanced; position unchanged; dialog unchanged; battle unchanged",
     ])
   })
+
+  test("runs the action gate before posting to the backend", async () => {
+    const sentPayloads: unknown[] = []
+    let actionClaims = 0
+    const tools = createPokemonControlPlane({
+      controllerId: "agent-test",
+      onBeforeAction: () => {
+        actionClaims += 1
+        if (actionClaims > 1) {
+          throw new Error("turn already used an action")
+        }
+      },
+      transport: createRecordingTransport(sentPayloads),
+    })
+    const execute = tools.use_emulator.execute
+    if (execute === undefined) {
+      throw new Error("use_emulator execute missing")
+    }
+
+    await execute({ buttons: ["up"] }, { context: {}, messages: [], toolCallId: "tool-call-6" })
+    let secondActionBlocked = false
+    try {
+      await execute({ buttons: ["left"] }, { context: {}, messages: [], toolCallId: "tool-call-7" })
+    } catch (error) {
+      secondActionBlocked =
+        error instanceof Error && error.message === "turn already used an action"
+    }
+
+    expect(secondActionBlocked).toBe(true)
+    expect(sentPayloads).toHaveLength(1)
+  })
 })
