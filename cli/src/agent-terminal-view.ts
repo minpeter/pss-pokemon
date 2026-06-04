@@ -31,10 +31,11 @@ export class AgentTerminalView {
   #lastSpinnerLength = 0
   #spinnerFrame = 0
   #spinnerTimer: ReturnType<typeof setInterval> | null = null
+  #transientRows = 0
 
   constructor({
     imageRenderer = terminalObservationImageRenderer,
-    redrawFrames = false,
+    redrawFrames = process.stdout.isTTY === true,
     writer = stdoutTextWriter,
   }: AgentTerminalViewOptions = {}) {
     this.#imageRenderer = imageRenderer
@@ -58,7 +59,7 @@ export class AgentTerminalView {
     this.stopSpinner()
     this.#spinnerFrame = 0
     if (message === "agent thinking") {
-      this.#writer.write("\n")
+      this.#writeTransient("\n")
     }
     this.#renderSpinner(message)
     this.#spinnerTimer = setInterval(() => {
@@ -83,7 +84,7 @@ export class AgentTerminalView {
         return
       case "assistant-text":
         this.stopSpinner()
-        this.#writer.write(event.text)
+        this.#writeTransient(event.text)
         return
       case "runtime-input":
         this.startSpinner("agent thinking")
@@ -94,20 +95,20 @@ export class AgentTerminalView {
         return
       case "tool-call":
         this.stopSpinner()
-        this.#writer.write(
+        this.#writeTransient(
           `${chalk.yellow("ACTION")} ${event.toolName} ${JSON.stringify(event.input)}\n`,
         )
         return
       case "tool-result":
         this.stopSpinner()
-        this.#writer.write(
+        this.#writeTransient(
           `${chalk.green("DONE")} ${event.toolName} ${JSON.stringify(event.output)}\n`,
         )
         this.startSpinner("loading next screen")
         return
       case "turn-error":
         this.stopSpinner()
-        this.#writer.write(`${chalk.red("ERROR")} ${event.message}\n`)
+        this.#writeTransient(`${chalk.red("ERROR")} ${event.message}\n`)
         return
       case "step-end":
         this.startSpinner("agent thinking")
@@ -130,7 +131,7 @@ export class AgentTerminalView {
     this.#spinnerFrame += 1
     const text = `${symbol} ${message}${dots}`
     this.#lastSpinnerLength = text.length
-    this.#writer.write(`\r${chalk.cyanBright(symbol)} ${chalk.dim(`${message}${dots}`)}`)
+    this.#writeTransient(`\r${chalk.cyanBright(symbol)} ${chalk.dim(`${message}${dots}`)}`)
   }
 
   async #writeFrame(
@@ -152,15 +153,28 @@ export class AgentTerminalView {
     countingWriter.write(header)
     await writeObservationFrame(observation, countingWriter, this.#imageRenderer, options)
     this.#lastFrameRows = frameRows + (hasOpenRow ? 1 : 0)
+    this.#transientRows = 0
   }
 
   #clearPreviousFrame(): void {
     if (!this.#redrawFrames || this.#lastFrameRows === 0) {
       return
     }
-    this.#writer.write(`\u001B[${this.#lastFrameRows}A\u001B[J`)
+    this.#writer.write(`\u001B[${this.#lastFrameRows + this.#transientRows}A\u001B[J`)
     this.#lastFrameRows = 0
+    this.#transientRows = 0
   }
+
+  #writeTransient(chunk: string): void {
+    this.#writer.write(chunk)
+    if (this.#redrawFrames && this.#lastFrameRows > 0) {
+      this.#transientRows += countLineAdvances(chunk)
+    }
+  }
+}
+
+function countLineAdvances(chunk: string): number {
+  return chunk.match(/\n/g)?.length ?? 0
 }
 
 function countTerminalRows({
