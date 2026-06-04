@@ -146,4 +146,45 @@ describe("AgentTerminalView", () => {
     expect(clearChunk).toEndWith("A\u001B[J")
     expect(Number.parseInt(clearChunk?.slice(2) ?? "", 10)).toBeGreaterThan(0)
   })
+
+  test("includes transient agent status rows when redrawing the next screen", async () => {
+    const baselineRows = await firstClearRowCount({ includeTransientRows: false })
+    const transientRows = await firstClearRowCount({ includeTransientRows: true })
+
+    expect(transientRows).toBeGreaterThan(baselineRows)
+  })
 })
+
+async function firstClearRowCount({
+  includeTransientRows,
+}: {
+  readonly includeTransientRows: boolean
+}): Promise<number> {
+  const chunks: string[] = []
+  const view = new AgentTerminalView({
+    imageRenderer: {
+      render: () => Promise.resolve("[agent image]"),
+    },
+    redrawFrames: true,
+    writer: {
+      write: (chunk) => {
+        chunks.push(chunk)
+      },
+    },
+  })
+
+  await view.showObservation(observationFixture, 1)
+  if (includeTransientRows) {
+    view.handleEvent({ type: "turn-start" })
+    view.handleEvent({
+      input: { buttons: ["up"] },
+      toolCallId: "call-1",
+      toolName: "use_emulator",
+      type: "tool-call",
+    })
+  }
+  await view.showActionObservation(observationFixture, 1)
+
+  const clearChunk = chunks.find((chunk) => chunk.startsWith("\u001B["))
+  return Number.parseInt(clearChunk?.slice(2) ?? "", 10)
+}
