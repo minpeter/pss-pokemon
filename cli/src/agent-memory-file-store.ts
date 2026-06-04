@@ -1,5 +1,5 @@
 import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises"
-import { dirname, join, resolve } from "node:path"
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   createInMemoryPokemonAgentMemory,
@@ -34,7 +34,11 @@ export async function createFilePokemonAgentMemory({
   rootDir,
   sessionId,
 }: FilePokemonAgentMemoryOptions): Promise<PokemonAgentMemory> {
-  const sessionDir = join(rootDir, sanitizeSessionId(sessionId))
+  const resolvedRootDir = resolve(rootDir)
+  const sessionDir = resolve(resolvedRootDir, sanitizeSessionId(sessionId))
+  if (!isPathInside(sessionDir, resolvedRootDir)) {
+    throw new Error("agent memory session path escaped memory root")
+  }
   await mkdir(sessionDir, { recursive: true })
   const projectionPath = join(sessionDir, PROJECTION_FILE)
   const episodesPath = join(sessionDir, EPISODES_FILE)
@@ -113,7 +117,18 @@ function summarizeAction(execution: PokemonActionExecution): string {
 }
 
 function sanitizeSessionId(sessionId: string): string {
-  return sessionId.replace(/[^A-Za-z0-9_.-]+/g, "-")
+  const sanitized = sessionId.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "")
+  return sanitized.length === 0 ? "pokemon-agent" : sanitized
+}
+
+function isPathInside(path: string, rootDir: string): boolean {
+  const relativePath = relative(rootDir, path)
+  return (
+    relativePath !== "" &&
+    relativePath !== ".." &&
+    !relativePath.startsWith(`..${sep}`) &&
+    !isAbsolute(relativePath)
+  )
 }
 
 function readErrorCode(error: unknown): string | null {

@@ -21,6 +21,25 @@ describe("file Pokemon agent memory", () => {
     expect(episodeLog).toContain('"turn":1')
     expect(episodeLog).toContain('"mapName":"Pallet Town"')
   })
+
+  test("keeps dot-only session ids inside the memory root", async () => {
+    const parentDir = await mkdtemp(join(tmpdir(), "pokemon-memory-sanitize-"))
+    const rootDir = join(parentDir, "root")
+    const memory = await createFilePokemonAgentMemory({ rootDir, sessionId: ".." })
+
+    await memory.recordAction(createExecution(), 1)
+
+    const episodeLog = await readFile(join(rootDir, "pokemon-agent", "episodes.jsonl"), "utf8")
+    expect(episodeLog).toContain('"turn":1')
+    let escapedWriteExists = false
+    try {
+      await readFile(join(parentDir, "episodes.jsonl"), "utf8")
+      escapedWriteExists = true
+    } catch {
+      escapedWriteExists = false
+    }
+    expect(escapedWriteExists).toBe(false)
+  })
 })
 
 function createExecution(): PokemonActionExecution {
