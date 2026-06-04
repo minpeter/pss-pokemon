@@ -109,4 +109,41 @@ describe("AgentTerminalView", () => {
     expect(output).toContain("[updated image]")
     expect(output).toContain("Pallet Town")
   })
+
+  test("redraws the live observation frame instead of appending the next screen", async () => {
+    const chunks: string[] = []
+    const view = new AgentTerminalView({
+      imageRenderer: {
+        render: () => Promise.resolve("[agent image]"),
+      },
+      redrawFrames: true,
+      writer: {
+        write: (chunk) => {
+          chunks.push(chunk)
+        },
+      },
+    })
+
+    await view.showObservation(observationFixture, 1)
+    await view.showActionObservation(
+      {
+        ...observationFixture,
+        state: {
+          ...observationFixture.state,
+          collision: {
+            ...observationFixture.state.collision,
+            ascii: "A B C\n1 . @ #\n2 . . .\n3 # # .\n@ you",
+          },
+        },
+      },
+      1,
+    )
+
+    const output = chunks.join("")
+    const clearChunk = chunks.find((chunk) => chunk.startsWith("\u001B["))
+    expect(output).toContain("TURN")
+    expect(output).toContain("AFTER ACTION")
+    expect(clearChunk).toEndWith("A\u001B[J")
+    expect(Number.parseInt(clearChunk?.slice(2) ?? "", 10)).toBeGreaterThan(0)
+  })
 })

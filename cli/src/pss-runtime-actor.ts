@@ -104,7 +104,7 @@ export function createPssRuntimeActor({
         hooks: createFreshObservationHooks({ memory, pendingTurn, session: () => session }),
         instructions: buildAgentInstructions(),
         model: provider(modelId),
-        toolChoice: "required",
+        toolChoice: "auto",
         tools: createPokemonControlPlane({
           client,
           controllerId,
@@ -157,6 +157,7 @@ async function runPssRuntimeTurn({
         if (nextObservation !== undefined) {
           actionObservation = nextObservation
         }
+        session.interrupt()
       }),
     )
     if (!result.ok) {

@@ -19,36 +19,39 @@ const stdoutTextWriter: TextWriter = {
 
 export interface AgentTerminalViewOptions {
   readonly imageRenderer?: ObservationImageRenderer
+  readonly redrawFrames?: boolean
   readonly writer?: TextWriter
 }
 
 export class AgentTerminalView {
   readonly #imageRenderer: ObservationImageRenderer
+  readonly #redrawFrames: boolean
   readonly #writer: TextWriter
+  #lastFrameRows = 0
   #lastSpinnerLength = 0
   #spinnerFrame = 0
   #spinnerTimer: ReturnType<typeof setInterval> | null = null
 
   constructor({
     imageRenderer = terminalObservationImageRenderer,
+    redrawFrames = false,
     writer = stdoutTextWriter,
   }: AgentTerminalViewOptions = {}) {
     this.#imageRenderer = imageRenderer
+    this.#redrawFrames = redrawFrames
     this.#writer = writer
   }
 
   async showObservation(observation: Observation, turn: number): Promise<void> {
     this.stopSpinner()
-    this.#writer.write(`\n${chalk.cyan("TURN")} ${turn}\n`)
-    await writeObservationFrame(observation, this.#writer, this.#imageRenderer, {
+    await this.#writeFrame(`\n${chalk.cyan("TURN")} ${turn}\n`, observation, {
       modelInputText: `Fresh Pokemon harness observation before turn ${turn}.`,
     })
   }
 
   async showActionObservation(observation: Observation, turn: number): Promise<void> {
     this.stopSpinner()
-    this.#writer.write(`\n${chalk.green("AFTER ACTION")} ${turn}\n`)
-    await writeObservationFrame(observation, this.#writer, this.#imageRenderer)
+    await this.#writeFrame(`\n${chalk.green("AFTER ACTION")} ${turn}\n`, observation)
   }
 
   startSpinner(message: string): void {
@@ -129,6 +132,57 @@ export class AgentTerminalView {
     this.#lastSpinnerLength = text.length
     this.#writer.write(`\r${chalk.cyanBright(symbol)} ${chalk.dim(`${message}${dots}`)}`)
   }
+
+  async #writeFrame(
+    header: string,
+    observation: Observation,
+    options: { readonly modelInputText?: string } = {},
+  ): Promise<void> {
+    this.#clearPreviousFrame()
+    let frameRows = 0
+    let hasOpenRow = false
+    const countingWriter: TextWriter = {
+      write: (chunk) => {
+        const counted = countTerminalRows({ chunk, hasOpenRow })
+        frameRows += counted.rows
+        hasOpenRow = counted.hasOpenRow
+        this.#writer.write(chunk)
+      },
+    }
+    countingWriter.write(header)
+    await writeObservationFrame(observation, countingWriter, this.#imageRenderer, options)
+    this.#lastFrameRows = frameRows + (hasOpenRow ? 1 : 0)
+  }
+
+  #clearPreviousFrame(): void {
+    if (!this.#redrawFrames || this.#lastFrameRows === 0) {
+      return
+    }
+    this.#writer.write(`\u001B[${this.#lastFrameRows}A\u001B[J`)
+    this.#lastFrameRows = 0
+  }
+}
+
+function countTerminalRows({
+  chunk,
+  hasOpenRow,
+}: {
+  readonly chunk: string
+  readonly hasOpenRow: boolean
+}): { readonly hasOpenRow: boolean; readonly rows: number } {
+  let rows = 0
+  let open = hasOpenRow
+  for (const char of chunk) {
+    if (char === "\n") {
+      rows += 1
+      open = false
+      continue
+    }
+    if (char !== "\r") {
+      open = true
+    }
+  }
+  return { hasOpenRow: open, rows }
 }
 
 function assertNever(value: never): never {
