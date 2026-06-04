@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
-      - uses: oven-sh/setup-bun@v3
+      - uses: oven-sh/setup-bun@v2
       - name: Backend checks
         working-directory: backend
         run: |
