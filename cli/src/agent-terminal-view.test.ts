@@ -10,7 +10,7 @@ describe("AgentTerminalView", () => {
     jest.useRealTimers()
   })
 
-  test("renders agent thinking with a leading blank line and one dot", () => {
+  test("renders agent thinking with a leading blank line, diamond, and one dot", () => {
     const chunks: string[] = []
     const view = new AgentTerminalView({
       writer: {
@@ -24,12 +24,11 @@ describe("AgentTerminalView", () => {
     view.stopSpinner()
 
     const output = chunks.join("")
-    expect(output).toContain("\n\ragent thinking.")
-    expect(output).not.toContain("✦")
+    expect(output).toContain("\n\r✦ agent thinking.")
     expect(output).not.toContain("- agent thinking")
   })
 
-  test("cycles thinking dots from one to three and clears the widest label", () => {
+  test("cycles diamond thinking dots from one to three and clears the widest label", () => {
     jest.useFakeTimers()
     const chunks: string[] = []
     const view = new AgentTerminalView({
@@ -46,13 +45,13 @@ describe("AgentTerminalView", () => {
     view.stopSpinner()
 
     const output = chunks.join("")
-    expect(output).toContain("agent thinking.")
-    expect(output).toContain("agent thinking..")
-    expect(output).toContain("agent thinking...")
-    expect(output).toContain(`\r${" ".repeat("agent thinking...".length)}\r`)
+    expect(output).toContain("✦ agent thinking.")
+    expect(output).toContain("✧ agent thinking..")
+    expect(output).toContain("◆ agent thinking...")
+    expect(output).toContain(`\r${" ".repeat("◆ agent thinking...".length)}\r`)
   })
 
-  test("preserves observation and action output while using separated thinking dots", async () => {
+  test("preserves observation and action output while using separated diamond thinking dots", async () => {
     const chunks: string[] = []
     const view = new AgentTerminalView({
       imageRenderer: {
@@ -79,8 +78,7 @@ describe("AgentTerminalView", () => {
 
     const output = chunks.join("")
     expect(output).toContain("loading agent")
-    expect(output).toContain("\n\ragent thinking.")
-    expect(output).not.toContain("✦")
+    expect(output).toContain("\n\r✦ agent thinking.")
     expect(output).not.toContain("- agent thinking")
     expect(output).toContain("TURN")
     expect(output).toContain("3")

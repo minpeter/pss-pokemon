@@ -8,6 +8,7 @@ import {
 } from "./renderer"
 import type { Observation } from "./schemas"
 
+const SPINNER_SYMBOL_FRAMES = ["✦", "✧", "◆", "◇"] as const
 const SPINNER_DOT_FRAMES = [".", "..", "..."] as const
 
 const stdoutTextWriter: TextWriter = {
@@ -121,11 +122,12 @@ export class AgentTerminalView {
   }
 
   #renderSpinner(message: string): void {
-    const frame = SPINNER_DOT_FRAMES[this.#spinnerFrame % SPINNER_DOT_FRAMES.length]
+    const symbol = SPINNER_SYMBOL_FRAMES[this.#spinnerFrame % SPINNER_SYMBOL_FRAMES.length]
+    const dots = SPINNER_DOT_FRAMES[this.#spinnerFrame % SPINNER_DOT_FRAMES.length]
     this.#spinnerFrame += 1
-    const text = `${message}${frame}`
+    const text = `${symbol} ${message}${dots}`
     this.#lastSpinnerLength = text.length
-    this.#writer.write(`\r${chalk.dim(text)}`)
+    this.#writer.write(`\r${chalk.cyanBright(symbol)} ${chalk.dim(`${message}${dots}`)}`)
   }
 }
 
