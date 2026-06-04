@@ -88,7 +88,7 @@ describe("AgentTerminalView", () => {
     expect(output).toContain("ACTION use_emulator")
   })
 
-  test("renders the updated screen after an action", async () => {
+  test("renders compact action status without another image after an action", async () => {
     const chunks: string[] = []
     const view = new AgentTerminalView({
       imageRenderer: {
@@ -106,8 +106,30 @@ describe("AgentTerminalView", () => {
     const output = chunks.join("")
     expect(output).toContain("AFTER ACTION")
     expect(output).toContain("4")
-    expect(output).toContain("[updated image]")
-    expect(output).toContain("Pallet Town")
+    expect(output).toContain("frame 26")
+    expect(output).not.toContain("[updated image]")
+    expect(output).not.toContain("Pallet Town")
+  })
+
+  test("renders one screen image per turn across an action cycle", async () => {
+    let renderCalls = 0
+    const view = new AgentTerminalView({
+      imageRenderer: {
+        render: () => {
+          renderCalls += 1
+          return Promise.resolve("[agent image]")
+        },
+      },
+      writer: {
+        write: () => {},
+      },
+    })
+
+    await view.showObservation(observationFixture, 1)
+    await view.showActionObservation(observationFixture, 1)
+    await view.showObservation(observationFixture, 2)
+
+    expect(renderCalls).toBe(2)
   })
 
   test("redraws the live observation frame instead of appending the next screen", async () => {
@@ -138,6 +160,7 @@ describe("AgentTerminalView", () => {
       },
       1,
     )
+    await view.showObservation(observationFixture, 2)
 
     const output = chunks.join("")
     const clearChunk = chunks.find((chunk) => chunk.startsWith("\u001B["))
@@ -184,6 +207,7 @@ async function firstClearRowCount({
     })
   }
   await view.showActionObservation(observationFixture, 1)
+  await view.showObservation(observationFixture, 2)
 
   const clearChunk = chunks.find((chunk) => chunk.startsWith("\u001B["))
   return Number.parseInt(clearChunk?.slice(2) ?? "", 10)

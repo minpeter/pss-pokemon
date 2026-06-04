@@ -52,7 +52,7 @@ export class AgentTerminalView {
 
   async showActionObservation(observation: Observation, turn: number): Promise<void> {
     this.stopSpinner()
-    await this.#writeFrame(`\n${chalk.green("AFTER ACTION")} ${turn}\n`, observation)
+    this.#writeTransient(`\n${chalk.green("AFTER ACTION")} ${turn} frame ${observation.frame}\n`)
   }
 
   startSpinner(message: string): void {
