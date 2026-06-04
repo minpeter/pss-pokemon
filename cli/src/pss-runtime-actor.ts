@@ -104,7 +104,7 @@ export function createPssRuntimeActor({
         hooks: createFreshObservationHooks({ memory, pendingTurn, session: () => session }),
         instructions: buildAgentInstructions(),
         model: provider(modelId),
-        toolChoice: "auto",
+        toolChoice: "required",
         tools: createPokemonControlPlane({
           client,
           controllerId,
