@@ -1,5 +1,5 @@
 import chalk from "chalk"
-import { composeModelDisplayImage, readScreenshotPixelSize } from "./agent-model-image-composer"
+import { composeTerminalDisplayImage, readScreenshotPixelSize } from "./agent-model-image-composer"
 import { formatObservedAgentText } from "./agent-observation"
 import { hasGridScreenshot } from "./agent-observation-types"
 import type { Observation, Screenshot } from "./schemas"
@@ -30,8 +30,9 @@ export async function renderAgentModelInput({
     await renderModelImage({
       imageRenderer,
       label: imageLabel,
+      options: modelImageRenderOptions(gridScreenshot),
       createPayload: () =>
-        composeModelDisplayImage({
+        composeTerminalDisplayImage({
           screenshot: observation.screenshot,
           ...(gridScreenshot === undefined ? {} : { gridScreenshot }),
         }),
@@ -44,16 +45,17 @@ export async function renderAgentModelInput({
 async function renderModelImage({
   imageRenderer,
   label,
+  options,
   createPayload,
 }: {
   readonly imageRenderer: ObservationImageRenderer
   readonly label: string
+  readonly options: ImageRenderOptions
   readonly createPayload: () => Promise<Uint8Array>
 }): Promise<string> {
-  const options = modelImageRenderOptions()
   try {
     const rendered = await imageRenderer.render(await createPayload(), options)
-    return reserveRowsAfterNativeTerminalGraphics(rendered, options.height)
+    return appendImageSeparator(reserveRowsAfterNativeTerminalGraphics(rendered, options.height))
   } catch (error) {
     if (error instanceof Error) {
       return chalk.gray(`[${label} unavailable: ${error.message}]`)
@@ -69,16 +71,28 @@ function reserveRowsAfterNativeTerminalGraphics(output: string, rows: number): s
   if (!usesNativeTerminalGraphics(output)) {
     return output
   }
+  if (usesKittyTerminalGraphics(output)) {
+    return output
+  }
   return `${output}${"\r\n".repeat(Math.max(0, rows - 1))}`
+}
+
+function appendImageSeparator(output: string): string {
+  return output.length === 0 ? output : `${output}\n`
 }
 
 function usesNativeTerminalGraphics(output: string): boolean {
   return output.includes("\u001B_G") || output.includes("\u001B]1337;")
 }
 
-function modelImageRenderOptions(): ImageRenderOptions {
+function usesKittyTerminalGraphics(output: string): boolean {
+  return output.includes("\u001B_G")
+}
+
+function modelImageRenderOptions(gridScreenshot: Screenshot | undefined): ImageRenderOptions {
+  const sourceRows = modelImageRowsForTerminal(process.stdout.rows)
   return {
-    height: modelImageRowsForTerminal(process.stdout.rows),
+    height: gridScreenshot === undefined ? sourceRows : Math.max(1, Math.round(sourceRows / 2)),
     preserveAspectRatio: true,
   }
 }

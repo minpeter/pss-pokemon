@@ -44,10 +44,12 @@ export function createObservationImageRenderer(
 ): ObservationImageRenderer {
   return {
     render: async (payload, options) => {
-      const nativeOutput = await nativeImageRenderer(payload, {
-        ...options,
-        preferNativeRender: true,
-      })
+      const nativeOutput = await captureStdoutWrites(() =>
+        nativeImageRenderer(payload, {
+          ...options,
+          preferNativeRender: true,
+        }),
+      )
       if (usesNativeTerminalGraphics(nativeOutput)) {
         return nativeOutput
       }
@@ -64,6 +66,33 @@ async function renderNativeTerminalImage(
   options: NativeImageRenderOptions,
 ): Promise<string> {
   return terminalImage.buffer(Buffer.from(payload), options)
+}
+
+async function captureStdoutWrites(render: () => Promise<string>): Promise<string> {
+  let capturedOutput = ""
+  const originalWrite = process.stdout.write
+  process.stdout.write = ((chunk, encodingOrCallback, callback) => {
+    capturedOutput += stdoutChunkToString(chunk)
+    stdoutWriteCallback(encodingOrCallback, callback)?.()
+    return true
+  }) as typeof process.stdout.write
+  try {
+    const returnedOutput = await render()
+    return `${capturedOutput}${returnedOutput}`
+  } finally {
+    process.stdout.write = originalWrite
+  }
+}
+
+function stdoutChunkToString(chunk: string | Uint8Array): string {
+  return typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8")
+}
+
+function stdoutWriteCallback(
+  encodingOrCallback: BufferEncoding | ((error?: Error | null) => void) | undefined,
+  callback: ((error?: Error | null) => void) | undefined,
+): ((error?: Error | null) => void) | undefined {
+  return typeof encodingOrCallback === "function" ? encodingOrCallback : callback
 }
 
 function usesNativeTerminalGraphics(output: string): boolean {

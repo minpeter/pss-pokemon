@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test"
+import { Jimp, JimpMime } from "jimp"
+import { createObservedAgentInput } from "./agent-observation"
 import type { AgentObservation } from "./agent-observation-types"
 import { observationFixture } from "./agent-test-fixtures"
 import { renderObservation } from "./renderer"
+import type { Observation, Screenshot } from "./schemas"
 
 describe("renderObservation terminal frame", () => {
   test("renders the full per-turn model observation payload with one terminal image", async () => {
@@ -52,16 +55,26 @@ describe("renderObservation terminal frame", () => {
     expect(visibleRendered).not.toContain("unknown-size")
   })
 
-  test("reserves rows after native terminal graphics so labels do not overlap images", async () => {
+  test("reserves scaled rows after native terminal graphics so labels do not overlap images", async () => {
+    const rendered = await withStdoutRows(24, () =>
+      renderObservation(observationFixture, {
+        render: () => Promise.resolve("\u001B]1337;File=inline=1:native-composite\u0007"),
+      }),
+    )
+
+    expect(newlineCountBetween(rendered, "native-composite", "MODEL TEXT")).toBeGreaterThanOrEqual(
+      6,
+    )
+  })
+
+  test("does not reserve extra rows after Kitty graphics", async () => {
     const rendered = await withStdoutRows(24, () =>
       renderObservation(observationFixture, {
         render: () => Promise.resolve("\u001B_Gnative-composite\u001B\\"),
       }),
     )
 
-    expect(newlineCountBetween(rendered, "native-composite", "MODEL TEXT")).toBeGreaterThanOrEqual(
-      12,
-    )
+    expect(newlineCountBetween(rendered, "native-composite", "MODEL TEXT")).toBeLessThanOrEqual(2)
   })
 
   test("does not add a large gap after direct native terminal image draws", async () => {
@@ -72,6 +85,14 @@ describe("renderObservation terminal frame", () => {
     )
 
     expect(newlineCountBetween(rendered, "image/png", "MODEL TEXT")).toBeLessThanOrEqual(2)
+  })
+
+  test("adds a blank line after the terminal model image", async () => {
+    const rendered = await renderObservation(observationFixture, {
+      render: () => Promise.resolve("[model image]"),
+    })
+
+    expect(rendered).toContain("[model image]\n\nMODEL TEXT")
   })
 
   test("keeps collision map text exactly as the model receives it", async () => {
@@ -93,6 +114,61 @@ describe("renderObservation terminal frame", () => {
 
     expect(rendered.match(/@ you \(E5\)/g)?.length).toBe(1)
     expect(rendered.match(/up=row-1/g)?.length).toBe(1)
+  })
+
+  test("renders 4x grid model display at 2x while keeping model input at 4x", async () => {
+    const screenshot = await createScreenshot(2, 1, 0xff0000ff)
+    const gridScreenshot = await createScreenshot(8, 4, 0x00ff00ff)
+    const observation: AgentObservation = {
+      ...observationFixture,
+      gridScreenshot,
+      screenshot,
+    }
+    const displayPayloads: Uint8Array[] = []
+    const displayOptions: unknown[] = []
+
+    await renderObservation(observation, {
+      render: (payload, options) => {
+        displayPayloads.push(payload)
+        displayOptions.push(options)
+        return Promise.resolve("[model image]")
+      },
+    })
+    const displayImage = await Jimp.fromBuffer(Buffer.from(displayPayloads[0] ?? new Uint8Array()))
+    const modelInput = createObservedAgentInput({
+      observation,
+      text: "Fresh observation before turn 1.",
+    })
+
+    expect(displayImage.bitmap.width).toBe(12)
+    expect(displayImage.bitmap.height).toBe(2)
+    expect(displayOptions).toEqual([{ height: 8, preserveAspectRatio: true }])
+    expect(modelInput[2]).toEqual({
+      image: `data:image/png;base64,${gridScreenshot.pngBase64}`,
+      mediaType: "image/png",
+      type: "image",
+    })
+  })
+
+  test("leaves screenshot-only terminal display payload unscaled", async () => {
+    const screenshot = await createScreenshot(2, 1, 0xff0000ff)
+    const { gridScreenshot: _gridScreenshot, ...baseObservation } = observationFixture
+    const observation: Observation = {
+      ...baseObservation,
+      screenshot,
+    }
+    const displayPayloads: Uint8Array[] = []
+
+    await renderObservation(observation, {
+      render: (payload) => {
+        displayPayloads.push(payload)
+        return Promise.resolve("[model image]")
+      },
+    })
+    const displayImage = await Jimp.fromBuffer(Buffer.from(displayPayloads[0] ?? new Uint8Array()))
+
+    expect(displayImage.bitmap.width).toBe(2)
+    expect(displayImage.bitmap.height).toBe(1)
   })
 })
 
@@ -124,5 +200,15 @@ async function withStdoutRows<T>(rows: number, callback: () => Promise<T>): Prom
       configurable: true,
       value: previousRows,
     })
+  }
+}
+
+async function createScreenshot(width: number, height: number, color: number): Promise<Screenshot> {
+  const image = new Jimp({ width, height, color })
+  const bytes = await image.getBuffer(JimpMime.png)
+  return {
+    height,
+    pngBase64: Buffer.from(bytes).toString("base64"),
+    width,
   }
 }

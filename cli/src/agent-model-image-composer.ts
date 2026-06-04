@@ -46,6 +46,20 @@ export async function composeModelDisplayImage({
   return output.getBuffer(JimpMime.png)
 }
 
+export async function composeTerminalDisplayImage({
+  screenshot,
+  gridScreenshot,
+}: ComposeModelDisplayImageOptions): Promise<Uint8Array> {
+  const payload = await composeModelDisplayImage({
+    screenshot,
+    ...(gridScreenshot === undefined ? {} : { gridScreenshot }),
+  })
+  if (gridScreenshot === undefined) {
+    return payload
+  }
+  return downscalePng(payload, 2)
+}
+
 async function loadScreenshot(screenshot: Screenshot): Promise<JimpImage> {
   return Jimp.fromBuffer(Buffer.from(decodeScreenshot(screenshot)))
 }
@@ -77,6 +91,18 @@ function normalizeImageHeight(image: JimpImage, targetHeight: number): JimpImage
   )
   image.resize({ w: targetWidth, h: targetHeight, mode: ResizeStrategy.NEAREST_NEIGHBOR })
   return image
+}
+
+async function downscalePng(payload: Uint8Array, divisor: number): Promise<Uint8Array> {
+  const image = await Jimp.fromBuffer(Buffer.from(payload))
+  const width = Math.max(1, Math.round(image.bitmap.width / divisor))
+  const height = Math.max(1, Math.round(image.bitmap.height / divisor))
+  if (image.bitmap.width === width && image.bitmap.height === height) {
+    return payload
+  }
+
+  image.resize({ w: width, h: height, mode: ResizeStrategy.NEAREST_NEIGHBOR })
+  return image.getBuffer(JimpMime.png)
 }
 
 function centeredOffset(containerSize: number, imageSize: number): number {

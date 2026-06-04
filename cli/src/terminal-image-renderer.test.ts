@@ -70,6 +70,34 @@ describe("createObservationImageRenderer", () => {
 
     expect(rendered).toBe(nativeProtocolOutput)
   })
+
+  test("captures native protocol output written directly to stdout", async () => {
+    const nativeProtocolOutput = "\u001B_Gf=100,a=T;abc\u001B\\"
+    let leakedOutput = ""
+    const originalWrite = process.stdout.write
+    process.stdout.write = ((chunk, encodingOrCallback, callback) => {
+      leakedOutput += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8")
+      const writeCallback = typeof encodingOrCallback === "function" ? encodingOrCallback : callback
+      writeCallback?.()
+      return true
+    }) as typeof process.stdout.write
+    const renderer = createObservationImageRenderer(() => {
+      process.stdout.write(nativeProtocolOutput)
+      return Promise.resolve("")
+    })
+
+    try {
+      const rendered = await renderer.render(twoByTwoColorPng, {
+        height: 1,
+        preserveAspectRatio: true,
+      })
+
+      expect(rendered).toBe(nativeProtocolOutput)
+      expect(leakedOutput).toBe("")
+    } finally {
+      process.stdout.write = originalWrite
+    }
+  })
 })
 
 function restoreEnv(name: string, value: string | undefined): void {
