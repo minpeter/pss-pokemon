@@ -32,7 +32,7 @@ mode provides deterministic ROM-less smoke coverage.
 
 - Run backend commands from `backend/`; use `uv`, not a root workspace command.
 - Keep `HarnessModel` models frozen, alias-aware, and compatible with
-  `cli/src/schemas.ts`.
+  `src/schemas.ts`.
 - Prefer dependency injection through `create_app(emulator=..., save_store=...)`
   for tests and smoke surfaces.
 - Keep real PyBoy code in `pyboy_emulator.py`; keep ROM-less/test behavior in

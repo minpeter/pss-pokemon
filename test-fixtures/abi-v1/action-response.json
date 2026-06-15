@@ -1,0 +1,136 @@
+{
+  "accepted": true,
+  "frameBefore": 76,
+  "frameAfter": 77,
+  "observation": {
+    "type": "observation",
+    "abiVersion": "v1",
+    "timestamp": "2026-06-04T00:00:01.000Z",
+    "frame": 77,
+    "state": {
+      "emulator": {
+        "frame": 77,
+        "romLoaded": true,
+        "saveStateLoaded": false
+      },
+      "player": {
+        "name": "RED",
+        "tile": {
+          "x": 5,
+          "y": 6
+        },
+        "facing": "up",
+        "rivalName": "BLUE",
+        "money": 3000,
+        "playTime": "00:12",
+        "pokedexOwned": 1,
+        "pokedexSeen": 2
+      },
+      "map": {
+        "id": 0,
+        "name": "Pallet Town"
+      },
+      "party": [
+        {
+          "species": "Squirtle",
+          "level": 5,
+          "hp": 19,
+          "maxHp": 19,
+          "status": null,
+          "nickname": "SQUIRTLE",
+          "types": ["Water"],
+          "moves": ["Tackle", "Tail Whip"],
+          "stats": {
+            "attack": 11,
+            "defense": 13,
+            "speed": 10,
+            "special": 12
+          }
+        }
+      ],
+      "bag": [
+        {
+          "name": "Potion",
+          "quantity": 1
+        }
+      ],
+      "badges": {
+        "owned": []
+      },
+      "battle": {
+        "active": false,
+        "kind": null,
+        "opponent": null,
+        "enemy": null
+      },
+      "dialog": {
+        "active": false,
+        "text": null
+      },
+      "flags": {
+        "values": {
+          "got_starter": true
+        }
+      },
+      "collision": {
+        "mapId": 0,
+        "mapName": "Pallet Town",
+        "width": 3,
+        "height": 3,
+        "grid": [
+          [true, true, true],
+          [true, false, true],
+          [true, true, true]
+        ],
+        "playerTile": {
+          "x": 5,
+          "y": 6
+        },
+        "passableDirections": ["up", "left", "right"],
+        "ascii": "...\n.E.\n...",
+        "playerCell": "E5"
+      },
+      "parserWarnings": []
+    },
+    "screenshot": {
+      "abiVersion": "v1",
+      "pngBase64": "AA==",
+      "width": 1,
+      "height": 1
+    },
+    "lastAction": {
+      "controllerId": "agent-cli",
+      "sequence": [
+        {
+          "type": "walk",
+          "direction": "up",
+          "pressFrames": 8,
+          "waitFrames": 12
+        },
+        {
+          "type": "button",
+          "button": "a",
+          "pressFrames": 6,
+          "waitFrames": 60
+        },
+        {
+          "type": "wait",
+          "frames": 1
+        },
+        {
+          "type": "hold",
+          "button": "b",
+          "frames": 2
+        },
+        {
+          "type": "text_skip_until_dialog_end",
+          "button": "a",
+          "pressFrames": 6,
+          "waitFrames": 60,
+          "maxPresses": 2
+        }
+      ]
+    },
+    "parserWarnings": []
+  }
+}

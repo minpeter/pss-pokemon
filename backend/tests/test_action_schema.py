@@ -146,6 +146,20 @@ def test_nous_action_tokens_are_normalized_to_typed_sequence() -> None:
     assert isinstance(text_skip_step, TextSkipUntilDialogEndStep)
 
 
+def test_action_request_without_abi_version_still_validates() -> None:
+    request = ActionRequest.model_validate(
+        {
+            "controllerId": "manual-cli",
+            "sequence": [{"type": "wait", "frames": 1}],
+        }
+    )
+
+    step = request.sequence[0]
+    assert request.controller_id == "manual-cli"
+    assert isinstance(step, WaitStep)
+    assert step.frames == 1
+
+
 def test_nous_action_tokens_reject_unknown_actions() -> None:
     with pytest.raises(ValidationError, match="unsupported action token"):
         _ = ActionRequest.model_validate(

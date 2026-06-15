@@ -22,7 +22,6 @@ jobs:
           uv run basedpyright
           uv run pytest
       - name: CLI checks
-        working-directory: cli
         run: |
           bun install --frozen-lockfile
           bunx biome check .

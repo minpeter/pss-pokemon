@@ -11,7 +11,6 @@ cd "$(dirname "$0")/.."
 )
 
 (
-  cd cli
   bun install --frozen-lockfile
   bunx biome check .
   bunx tsc --noEmit

@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "abiVersion": "v1",
+    "kind": "objective_result",
+    "source": "dashboard",
+    "exampleId": "objective-result-basic",
+    "recordedAt": "2026-06-04T00:00:04.000Z"
+  },
+  "example": {
+    "type": "objective_result",
+    "objective": {
+      "tier": "primary",
+      "text": "Deliver Oak's Parcel and get Pokedex",
+      "done": false
+    },
+    "result": {
+      "status": "in_progress",
+      "summary": "Synthetic objective remains active for ABI fixture coverage.",
+      "evidence": ["observation frame 76"]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "abiVersion": "v1",
+    "kind": "doneclaim",
+    "source": "agent",
+    "exampleId": "doneclaim-basic",
+    "recordedAt": "2026-06-04T00:00:05.000Z"
+  },
+  "example": {
+    "type": "doneclaim",
+    "task": "task-6",
+    "result": "PASS",
+    "observables": ["shared ABI fixtures parse in backend and CLI tests"],
+    "evidence": ["synthetic fixture payloads only"]
+  }
+}
