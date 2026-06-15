@@ -29,6 +29,12 @@ BUTTON_NAME_MAP: Final[dict[str, str]] = {
     "select": "select",
 }
 
+# Frames to advance on a cold boot so the first observation renders the title
+# screen instead of a black frame 0 (the LCD has not drawn yet). Tuned for the
+# Gen-1 Red/Blue boot + intro animation. Skipped when an initial save state is
+# loaded, since that already restores a drawn frame.
+BOOT_WARMUP_FRAMES: Final = 1500
+
 
 class PyBoyImage(Protocol):
     width: int
@@ -61,11 +67,21 @@ class PyBoyLike(Protocol):
     def tick(self) -> bool: ...
 
 
+def create_pyboy(rom_path: Path) -> PyBoyLike:
+    pyboy_module = importlib.import_module("pyboy")
+    pyboy: PyBoyLike = pyboy_module.PyBoy(str(rom_path), window="null")
+    return pyboy
+
+
 class PyBoyEmulator:
-    def __init__(self, rom_path: Path, save_state_path: Path | None) -> None:
-        pyboy_module = importlib.import_module("pyboy")
-        pyboy_class = pyboy_module.PyBoy
-        self._pyboy: PyBoyLike = pyboy_class(str(rom_path), window="null")
+    def __init__(
+        self,
+        rom_path: Path,
+        save_state_path: Path | None,
+        *,
+        pyboy: PyBoyLike | None = None,
+    ) -> None:
+        self._pyboy: PyBoyLike = pyboy if pyboy is not None else create_pyboy(rom_path)
         self._frame: int = 0
         self._initial_save_state_path: Path | None = save_state_path
         self._save_state_loaded: bool = False
@@ -73,6 +89,12 @@ class PyBoyEmulator:
             with save_state_path.open("rb") as save_state:
                 self._pyboy.load_state(save_state)
             self._save_state_loaded = True
+        else:
+            self._warm_up_past_boot()
+
+    def _warm_up_past_boot(self) -> None:
+        for _ in range(BOOT_WARMUP_FRAMES):
+            _ = self._pyboy.tick()
 
     @property
     def frame(self) -> int:

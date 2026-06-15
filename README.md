@@ -87,9 +87,21 @@ export POKEMON_AI_MODEL=gpt-5.5
 ```
 
 `POKEMON_ROM_PATH` is required for real Pokemon screenshots. If
-`POKEMON_SAVE_STATE_PATH` is omitted, the real backend boots from the ROM's
-normal start. If set, it should point to a prepared Pallet Town field state so
-rich state and collision checks start from a deterministic position.
+`POKEMON_SAVE_STATE_PATH` is omitted, the real backend warms up past the black
+boot frame and starts at the title screen (the first observation renders rather
+than showing an empty frame). If set, it should point to a prepared field state
+so rich state and collision checks start from a deterministic in-game position.
+
+To produce such a save state — boots the ROM, drives through the intro
+(including the Korean/Japanese name-entry screen), and writes a save state once
+the player has overworld control:
+
+```bash
+cd backend && uv run python -m pokemon_harness.make_intro_save_state \
+  --rom "$POKEMON_ROM_PATH" --out .local/savestates/intro-done.state
+```
+
+Save states are ROM-derived and gitignored; do not commit them.
 
 ## Run
 
