@@ -45,6 +45,7 @@ export {
   NoRunningBackendSessionsError,
   PortAllocationError,
   RegistryLockTimeoutError,
+  UnsafeProcessStopError,
 } from "./backend-session-errors"
 export { defaultBackendSessionRootDir, defaultRepoRootDir } from "./backend-session-paths"
 export { selectBackendSessionInteractively } from "./backend-session-selection"
@@ -123,15 +124,25 @@ export async function prepareBackendSession({
 }
 
 export async function stopBackendSession({
+  healthProbe = defaultHealthProbe,
+  pidProbe = defaultPidProbe,
   processStopper = defaultProcessStopper,
   registryRootDir = defaultBackendSessionRootDir(),
   sessionId,
 }: {
+  readonly healthProbe?: HealthProbe
+  readonly pidProbe?: PidProbe
   readonly processStopper?: ProcessStopper
   readonly registryRootDir?: string
   readonly sessionId: string
 }): Promise<{ readonly stopped: boolean }> {
-  return stopRegisteredSession({ processStopper, registryRootDir, sessionId })
+  return stopRegisteredSession({
+    healthProbe,
+    pidProbe,
+    processStopper,
+    registryRootDir,
+    sessionId,
+  })
 }
 
 export async function listLiveBackendSessions({

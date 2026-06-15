@@ -61,10 +61,12 @@ def normalize_step(step: ActionStep) -> ActionStep:
                 update={"press_frames": ONE_TILE_PRESS_FRAMES, "wait_frames": ONE_TILE_WAIT_FRAMES},
             )
         case TextSkipUntilDialogEndStep():
+            max_presses = int_or_default(step.max_presses, TEXT_SKIP_MAX_PRESSES)
+            wait_frames = int_or_default(step.wait_frames, DIALOG_SETTLE_WAIT_FRAMES)
             return step.model_copy(
                 update={
-                    "max_presses": min(step.max_presses, TEXT_SKIP_MAX_PRESSES),
-                    "wait_frames": max(step.wait_frames, DIALOG_SETTLE_WAIT_FRAMES),
+                    "max_presses": min(max_presses, TEXT_SKIP_MAX_PRESSES),
+                    "wait_frames": max(wait_frames, DIALOG_SETTLE_WAIT_FRAMES),
                 },
             )
         case ButtonStep() | WaitStep() | HoldStep():
@@ -77,12 +79,19 @@ def frame_cost(step: ActionStep) -> int:
             press_frames=press_frames,
             wait_frames=wait_frames,
         ):
-            return press_frames + wait_frames
+            return int_or_default(press_frames, 0) + int_or_default(wait_frames, 0)
         case TextSkipUntilDialogEndStep(
             press_frames=press_frames,
             wait_frames=wait_frames,
             max_presses=max_presses,
         ):
-            return (press_frames + wait_frames) * max_presses
+            step_frames = int_or_default(press_frames, 0) + int_or_default(wait_frames, 0)
+            return step_frames * int_or_default(max_presses, 0)
         case WaitStep(frames=frames) | HoldStep(frames=frames):
             return frames
+
+
+def int_or_default(value: int | None, fallback: int) -> int:
+    if value is None:
+        return fallback
+    return value

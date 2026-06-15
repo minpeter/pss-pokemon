@@ -50,6 +50,26 @@ def test_supervisor_normalizes_dialog_settle_timing() -> None:
     assert step.max_presses == 10
 
 
+def test_supervisor_defaults_corrupted_dialog_timing_values() -> None:
+    action = ActionRequest.model_validate(
+        {
+            "controllerId": "manual-cli",
+            "sequence": [{"type": "text_skip_until_dialog_end", "button": "a"}],
+        }
+    )
+    step = action.sequence[0]
+    assert isinstance(step, TextSkipUntilDialogEndStep)
+    corrupted_step = step.model_copy(update={"max_presses": None, "wait_frames": None})
+    corrupted_action = action.model_copy(update={"sequence": (corrupted_step,)})
+
+    supervised = supervise_action_request(corrupted_action)
+    normalized_step = supervised.sequence[0]
+
+    assert isinstance(normalized_step, TextSkipUntilDialogEndStep)
+    assert normalized_step.wait_frames == 60
+    assert normalized_step.max_presses == 10
+
+
 def test_supervisor_rejects_unsafe_multi_hold_sequences() -> None:
     action = ActionRequest.model_validate(
         {

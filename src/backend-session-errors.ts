@@ -54,3 +54,11 @@ export class RegistryLockTimeoutError extends Error {
     super(`timed out waiting for backend session registry lock: ${lockPath}`)
   }
 }
+
+export class UnsafeProcessStopError extends Error {
+  readonly name = "UnsafeProcessStopError"
+
+  constructor(readonly pid: number) {
+    super(`refusing to stop unsafe backend process pid: ${pid}`)
+  }
+}

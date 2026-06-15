@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtemp, readFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, utimes } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
@@ -8,6 +8,7 @@ import {
   prepareBackendSession,
   stopBackendSession,
 } from "./backend-session-manager"
+import { appendSession } from "./backend-session-registry"
 
 type TestRegistry = {
   readonly sessions: readonly BackendSessionRecord[]
@@ -75,6 +76,8 @@ describe("backend session registry", () => {
     await writeRegistry(rootDir, [live])
 
     const result = await stopBackendSession({
+      healthProbe: async (url) => url === live.url,
+      pidProbe: (pid) => pid === live.pid,
       processStopper: (pid: number) => {
         stopped.push(pid)
         return Promise.resolve()
@@ -85,6 +88,26 @@ describe("backend session registry", () => {
 
     expect(result).toEqual({ stopped: true })
     expect(stopped).toEqual([111])
+    expect(await readRegistry(rootDir)).toEqual({ sessions: [], version: 1 })
+  })
+
+  test("stop prunes a stale session without signaling its stale pid", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "pokemon-backend-sessions-"))
+    const stale = backendSession({ id: "stale", pid: 999_999, port: 18765 })
+    const stopped: number[] = []
+    await writeRegistry(rootDir, [stale])
+
+    const result = await stopBackendSession({
+      processStopper: (pid: number) => {
+        stopped.push(pid)
+        return Promise.resolve()
+      },
+      registryRootDir: rootDir,
+      sessionId: stale.id,
+    })
+
+    expect(result).toEqual({ stopped: false })
+    expect(stopped).toEqual([])
     expect(await readRegistry(rootDir)).toEqual({ sessions: [], version: 1 })
   })
 
@@ -175,6 +198,47 @@ describe("backend session registry", () => {
       "live",
       "pokemon-20260608-000200-18767",
     ])
+  })
+
+  test("recovers a stale registry lock left by a crashed process", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "pokemon-backend-sessions-"))
+    const staleLockDir = join(rootDir, "sessions.lock")
+    await mkdir(staleLockDir)
+    const staleTimestamp = new Date(Date.now() - 3_000)
+    await utimes(staleLockDir, staleTimestamp, staleTimestamp)
+    const session = backendSession({ id: "recovered", pid: 444, port: 18768 })
+
+    await appendSession({ registryRootDir: rootDir, session })
+
+    expect(await readRegistry(rootDir)).toEqual({ sessions: [session], version: 1 })
+  })
+
+  test("keeps an active registry lock while the owner is still running", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "pokemon-backend-sessions-"))
+    const live = backendSession({ id: "live", pid: 111, port: 18765 })
+    const appended = backendSession({ id: "appended", pid: 222, port: 18766 })
+    const stopperEntered = Promise.withResolvers<void>()
+    const releaseStopper = Promise.withResolvers<void>()
+    await writeRegistry(rootDir, [live])
+
+    const stopped = stopBackendSession({
+      healthProbe: async (url) => url === live.url,
+      pidProbe: (pid) => pid === live.pid,
+      processStopper: async () => {
+        stopperEntered.resolve()
+        await releaseStopper.promise
+      },
+      registryRootDir: rootDir,
+      sessionId: live.id,
+    })
+    await stopperEntered.promise
+    const appendedSession = appendSession({ registryRootDir: rootDir, session: appended })
+    await Bun.sleep(2_100)
+    releaseStopper.resolve()
+    await stopped
+    await appendedSession
+
+    expect(await readRegistry(rootDir)).toEqual({ sessions: [appended], version: 1 })
   })
 })
 

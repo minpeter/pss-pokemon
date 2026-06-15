@@ -5,6 +5,7 @@ import {
   BackendStartupTimeoutError,
   MissingRealRomPathError,
   PortAllocationError,
+  UnsafeProcessStopError,
 } from "./backend-session-errors"
 import { DEFAULT_HEALTH_POLL_INTERVAL_MS, DEFAULT_HOST } from "./backend-session-paths"
 import type { HealthProbe, ProcessSpawnRequest, ProcessSpawnResult } from "./backend-session-types"
@@ -154,11 +155,13 @@ export async function spawnBackendProcess(
 }
 
 export async function defaultProcessStopper(pid: number): Promise<void> {
+  if (pid <= 1) {
+    throw new UnsafeProcessStopError(pid)
+  }
   try {
     process.kill(-pid, "SIGTERM")
   } catch (error) {
     if (isMissingProcessError(error)) {
-      process.kill(pid, "SIGTERM")
       return
     }
     throw error
