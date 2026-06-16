@@ -11,7 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "3.0.0-canary.48",
+    "@ai-sdk/openai-compatible": "3.0.0-canary.56",
     "@inquirer/prompts": "^8.0.0",
     "@minpeter/pss-runtime": "0.0.10",
     "ai": "7.0.0-canary.142",
