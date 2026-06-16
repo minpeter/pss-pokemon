@@ -7,7 +7,7 @@
       "dependencies": {
         "@ai-sdk/openai-compatible": "3.0.0-canary.48",
         "@inquirer/prompts": "^8.0.0",
-        "@minpeter/pss-runtime": "0.0.10",
+        "@minpeter/pss-runtime": "0.0.11",
         "ai": "7.0.0-canary.142",
         "chalk": "^5.6.0",
         "dotenv": "17.4.2",
@@ -140,7 +140,7 @@
 
     "@jimp/utils": ["@jimp/utils@1.6.1", "", { "dependencies": { "@jimp/types": "1.6.1", "tinycolor2": "^1.6.0" } }, "sha512-veFPRd93FCnS7AgmCkPgARVGoDRrJ9cm1ujuNyA+UfQ5VKbED2002sm5XfFLFwTsKC8j04heTrwe+tU1dluXOw=="],
 
-    "@minpeter/pss-runtime": ["@minpeter/pss-runtime@0.0.10", "", { "dependencies": { "ai": "7.0.0-canary.142" } }, "sha512-ny5qg1/WPjJuAI9gOmRdlSV4Bv5wiOq9nC38bRngkKT7d5u/A/MPXu1HPpjlFQamEvKVwBIqLns3OYhKolIkiQ=="],
+    "@minpeter/pss-runtime": ["@minpeter/pss-runtime@0.0.11", "", { "dependencies": { "ai": "7.0.0-canary.142" } }, "sha512-SP9yHP4um+BCaM2RV9NxXBRwQehP0MoXJLEXgAKWl6Mnj3mgT1RzmS6bHIaQc5UXOG17xPk2BiY4lf/oL54W3w=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
