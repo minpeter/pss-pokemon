@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Final, Literal
 
 from pydantic import Field
 
@@ -16,6 +16,7 @@ from pokemon_harness.action_schemas import (
 from pokemon_harness.model_base import HarnessModel
 
 __all__ = (
+    "BACKEND_ABI_VERSION",
     "ActionRequest",
     "ActionResponse",
     "ActionStep",
@@ -51,6 +52,9 @@ __all__ = (
     "WaitStep",
     "WalkStep",
 )
+
+
+BACKEND_ABI_VERSION: Final[str] = "v1"
 
 
 class Position(HarnessModel):
@@ -160,6 +164,7 @@ class GameState(HarnessModel):
 
 
 class Screenshot(HarnessModel):
+    abi_version: str = Field(default=BACKEND_ABI_VERSION, alias="abiVersion")
     png_base64: str = Field(alias="pngBase64")
     width: int
     height: int
@@ -167,6 +172,7 @@ class Screenshot(HarnessModel):
 
 class Observation(HarnessModel):
     type: Literal["observation"] = "observation"
+    abi_version: str = Field(default=BACKEND_ABI_VERSION, alias="abiVersion")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     frame: int
     state: GameState
@@ -223,5 +229,6 @@ class SavesResponse(HarnessModel):
 
 
 class ScreenshotBase64Response(HarnessModel):
+    abi_version: str = Field(default=BACKEND_ABI_VERSION, alias="abiVersion")
     png_base64: str = Field(alias="pngBase64")
     frame: int

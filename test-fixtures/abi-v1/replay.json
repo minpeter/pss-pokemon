@@ -1,0 +1,34 @@
+{
+  "abiVersion": "pss-pokemon.trace.v1",
+  "schemaVersion": 1,
+  "type": "replay",
+  "timestamp": "2026-06-04T00:00:03.000Z",
+  "runId": "synthetic-run-001",
+  "replayId": "synthetic-replay-001",
+  "metadata": {
+    "backendKind": "pyboy_fake",
+    "controllerMode": "llm_macro_deterministic_micro",
+    "model": {
+      "id": "fixture-agent"
+    },
+    "objectiveId": "redblue.pallet_fake_smoke",
+    "privilegeLevel": "ram_lite",
+    "romIdentity": {
+      "kind": "unknown",
+      "reason": "ABI replay fixture uses fake backend state"
+    },
+    "selfImprovementMode": "none",
+    "temperature": 0,
+    "type": "harness_run_metadata"
+  },
+  "events": [
+    {
+      "type": "observation",
+      "atFrame": 76
+    },
+    {
+      "type": "action",
+      "atFrame": 77
+    }
+  ]
+}

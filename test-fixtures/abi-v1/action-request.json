@@ -1,0 +1,33 @@
+{
+  "controllerId": "agent-cli",
+  "sequence": [
+    {
+      "type": "walk",
+      "direction": "up",
+      "pressFrames": 8,
+      "waitFrames": 12
+    },
+    {
+      "type": "button",
+      "button": "a",
+      "pressFrames": 6,
+      "waitFrames": 60
+    },
+    {
+      "type": "wait",
+      "frames": 1
+    },
+    {
+      "type": "hold",
+      "button": "b",
+      "frames": 2
+    },
+    {
+      "type": "text_skip_until_dialog_end",
+      "button": "a",
+      "pressFrames": 6,
+      "waitFrames": 60,
+      "maxPresses": 2
+    }
+  ]
+}

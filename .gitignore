@@ -12,7 +12,7 @@ backend/.basedpyright/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/src/**/*.egg-info/
-cli/node_modules/
-cli/dist/
+node_modules/
+dist/
 *.tsbuildinfo
-cli/coverage/
+coverage/

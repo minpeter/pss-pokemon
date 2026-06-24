@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "abiVersion": "v1",
+    "kind": "event",
+    "source": "pss-runtime",
+    "exampleId": "event-assistant-text-basic",
+    "recordedAt": "2026-06-04T00:00:02.000Z"
+  },
+  "example": {
+    "type": "event",
+    "text": "Synthetic assistant-text event for ABI fixture coverage."
+  }
+}

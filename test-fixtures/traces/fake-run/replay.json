@@ -1,0 +1,33 @@
+{
+  "abiVersion": "pss-pokemon.trace.v1",
+  "schemaVersion": 1,
+  "type": "replay",
+  "timestamp": "2026-06-15T00:00:00.000Z",
+  "runId": "fake-run",
+  "replayId": "fake-run",
+  "metadata": {
+    "backendKind": "pyboy_fake",
+    "controllerMode": "llm_macro_deterministic_micro",
+    "model": {
+      "id": "fixture-agent"
+    },
+    "objectiveId": "redblue.pallet_fake_smoke",
+    "privilegeLevel": "ram_lite",
+    "romIdentity": {
+      "kind": "unknown",
+      "reason": "fake backend smoke trace has no ROM"
+    },
+    "selfImprovementMode": "none",
+    "temperature": 0,
+    "type": "harness_run_metadata"
+  },
+  "events": [
+    {
+      "type": "run.started"
+    },
+    {
+      "type": "objective.result",
+      "atFrame": 20
+    }
+  ]
+}

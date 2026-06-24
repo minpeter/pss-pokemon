@@ -18,7 +18,8 @@ mode provides deterministic ROM-less smoke coverage.
 | Fake entrypoint | `src/pokemon_harness/fake_main.py` | Uses `FakeEmulator` and `.local/saves`. |
 | Settings/preflight | `src/pokemon_harness/config.py`, `preflight.py` | `POKEMON_` env prefix; real ROM path validation. |
 | Emulator protocol | `src/pokemon_harness/emulator.py` | Boundary shared by PyBoy and fake implementations. |
-| PyBoy adapter | `src/pokemon_harness/pyboy_emulator.py` | Keep import/runtime details isolated here. |
+| PyBoy adapter | `src/pokemon_harness/pyboy_emulator.py` | Keep import/runtime details isolated here. Cold boot warms up `BOOT_WARMUP_FRAMES` so the first observation renders instead of a black frame 0; skipped when a save state is loaded. |
+| Save-state generator | `src/pokemon_harness/make_intro_save_state.py` | Best-effort tool: drives the intro (START confirms name entry) and writes an overworld save state for `POKEMON_SAVE_STATE_PATH`. |
 | Fake emulator | `src/pokemon_harness/fake_emulator.py` | Deterministic frames, state, screenshot, and save bytes. |
 | API models | `src/pokemon_harness/schemas.py`, `model_base.py` | Frozen alias-aware Pydantic models. |
 | Action models | `src/pokemon_harness/action_schemas.py` | Discriminated actions and Nous token normalization. |
@@ -32,7 +33,7 @@ mode provides deterministic ROM-less smoke coverage.
 
 - Run backend commands from `backend/`; use `uv`, not a root workspace command.
 - Keep `HarnessModel` models frozen, alias-aware, and compatible with
-  `cli/src/schemas.ts`.
+  `src/schemas.ts`.
 - Prefer dependency injection through `create_app(emulator=..., save_store=...)`
   for tests and smoke surfaces.
 - Keep real PyBoy code in `pyboy_emulator.py`; keep ROM-less/test behavior in
@@ -57,8 +58,10 @@ mode provides deterministic ROM-less smoke coverage.
 ## COMMANDS
 
 Run `uv run ruff check .`, `uv run basedpyright`, `uv run pytest`, fake or real
-`uv run uvicorn ... --host 127.0.0.1 --port 8765`, and
-`uv run python -m pokemon_harness.preflight` from `backend/`.
+`uv run uvicorn ... --host 127.0.0.1 --port 8765`,
+`uv run python -m pokemon_harness.preflight`, and
+`uv run python -m pokemon_harness.make_intro_save_state --rom <path> --out <path>`
+from `backend/`.
 
 ## TEST PATTERNS
 

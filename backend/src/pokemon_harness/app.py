@@ -7,6 +7,7 @@ import anyio
 from fastapi import FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, ConfigDict
 
+from pokemon_harness.action_supervisor import UnsafeActionSequenceError, supervise_action_request
 from pokemon_harness.config import HarnessSettings
 from pokemon_harness.controller_lease import (
     DEFAULT_CONTROLLER_LEASE_SECONDS,
@@ -144,14 +145,23 @@ def _register_action_routes(app: FastAPI, runtime: HarnessRuntime) -> None:
     @app.post("/action")
     def action(payload: ActionRequest) -> ActionResponse:
         with runtime.lock:
-            if not runtime.controller_lease.claim(payload.controller_id):
+            active_controller_id = runtime.controller_lease.active_controller_id()
+            if active_controller_id is not None and active_controller_id != payload.controller_id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="another controller is active",
                 )
+            try:
+                supervised_payload = supervise_action_request(payload)
+            except UnsafeActionSequenceError as error:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=str(error),
+                ) from error
+            _ = runtime.controller_lease.claim(payload.controller_id)
             frame_before = runtime.emulator.frame
-            observation = runtime.emulator.perform(payload)
-            runtime.dashboard.record_actions(len(payload.sequence))
+            observation = runtime.emulator.perform(supervised_payload)
+            runtime.dashboard.record_actions(len(supervised_payload.sequence))
             return ActionResponse(
                 accepted=True,
                 frameBefore=frame_before,
