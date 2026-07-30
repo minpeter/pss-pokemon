@@ -19,7 +19,7 @@
     "dotenv": "17.4.2",
     "jimp": "^1.6.1",
     "ky": "^1.14.0",
-    "terminal-image": "^4.0.0",
+    "terminal-image": "^5.0.1",
     "zod": "^4.3.0"
   },
   "devDependencies": {
