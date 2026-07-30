@@ -24,7 +24,7 @@ packages = ["src/pokemon_harness"]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.39.8",
+    "basedpyright>=1.39.9",
     "httpx>=0.28.0",
     "httpx2>=2.9.1",
     "pytest>=9.1.0",
